@@ -1,0 +1,60 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  labels:
+    run: spark-app-pi
+  name: spark-app-pi
+  namespace: default
+spec:
+  containers:
+  - args:
+    - driver
+    - --master
+    - k8s://https://kubernetes.default:443
+    - --deploy-mode
+    - client
+    - --name
+    - spark-pi
+    - --conf
+    - spark.executor.instances=8
+    - --conf
+    - spark.kubernetes.container.image=ryaxtech/spark-on-k8s:v0.1.0
+    - --class
+    - org.apache.spark.examples.SparkPi
+    - --conf
+    - spark.kubernetes.authenticate.driver.serviceAccountName=spark
+      #- --conf
+      #- spark.kubernetes.node.selector.runtime=singularity
+    - --conf
+    - spark.kubernetes.executor.request.cores=1
+    - --conf
+    - spark.kubernetes.driver.pod.name=spark-app-pi
+    - --conf
+    - spark.driver.host=spark-app-pi
+    - --conf
+    - spark.driver.port=4041
+    - --conf
+    - spark.driver.bindAddress=0.0.0.0
+    - local:///opt/spark/examples/jars/spark-examples_2.12-3.2.1.jar
+    - "20000"
+    image: ryaxtech/spark-on-k8s:v0.1.0
+    imagePullPolicy: IfNotPresent
+    name: spark-driver-2
+    resources: {}
+  nodeSelector:
+    kubernetes.io/hostname: k8swn1 # WARNING: CHANGE THIS Select any not HPC node
+  restartPolicy: Never
+  serviceAccount: spark
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: spark-app-pi
+spec:
+  clusterIP: None
+  selector:
+    run: spark-app-pi
+  ports:
+    - protocol: TCP
+      port: 4041
+      targetPort: 4041
