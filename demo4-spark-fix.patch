@@ -1,0 +1,78 @@
+54,55c54,55
+< SENTINEL_ROOT="/data/app/results/satellite-data/"
+< SENTINEL_STORAGE_PATH="/data/app/results/satellite-data/Sentinel_Patches/"
+---
+> SENTINEL_ROOT="/tmp/satellite-data/"
+> SENTINEL_STORAGE_PATH="/tmp/satellite-data/Sentinel_Patches/"
+58c58
+< GPT_FILES_PATH="/data/app/gpt_files"
+---
+> CURRENT_PATH=os.path.abspath(os.getcwd())
+620c620
+<                 GPT_FILES_PATH+"/gpt_cloud_masks_bands_specified.xml",
+---
+>                 CURRENT_PATH+"/gpt_files/gpt_cloud_masks_bands_specified.xml",
+638c638
+<         raise Exception("Collocating: gpt return code %s. Logs %s" % (err, proc_output))
+---
+>         raise Exception("Collocating: gpt return code %s" % (err))
+642,643c642
+< def mapper_f(x, credentials, rebuild, bands_S1, bands_S2, size, overlap):
+<     api = load_api(credentials)
+---
+> def mapper_f(x, api, rebuild, bands_S1, bands_S2, size, overlap):
+667,668c666
+<     counter = 0
+<     while counter < 10:
+---
+>     while True:
+672,675c670,671
+<         except(sentinel.SentinelAPIError, FileNotFoundError) as err:
+<             logging.warning("Fail to access API with error %s", err)
+<             time.sleep(5 * counter)
+<             counter +=1
+---
+>         except(sentinel.SentinelAPIError, FileNotFoundError):
+>             time.sleep(0.5)
+681,682c677
+<     counter = 0
+<     while counter < 10:
+---
+>     while True:
+686,689c681,682
+<         except(sentinel.SentinelAPIError, FileNotFoundError) as err:
+<             logging.warning("Fail to access API with error %s", err)
+<             time.sleep(5 * counter)
+<             counter +=1
+---
+>         except(sentinel.SentinelAPIError, FileNotFoundError):
+>             time.sleep(0.5)
+957,958d949
+<     log_dir = os.environ.get("LOG_DIR", "logs")
+<     Path(log_dir).mkdir(parents=True, exist_ok=True)
+961c952
+<         logging.basicConfig(level=log_level, format=log_fmt, filename='{log_dir}/config-creation.log')
+---
+>         logging.basicConfig(level=log_level, format=log_fmt, filename='logs/config-creation.log')
+969c960
+<     log_filename = f'{log_dir}/{config_basename}.log'
+---
+>     log_filename = f'logs/{config_basename}.log'
+973d963
+<     credentials=args['--credentials']
+976c966
+<         credentials=credentials,
+---
+>         credentials=args['--credentials'],
+996c986
+<         spark = pyspark.sql.SparkSession.builder.appName("SentinelPreprocessing").getOrCreate()
+---
+>         spark = pyspark.sql.SparkSession.builder.master(spark_master).appName("SentinelPreprocessing").getOrCreate()
+1001c991
+<         credentials_bc = spark.sparkContext.broadcast(credentials)
+---
+>         api_bc = spark.sparkContext.broadcast(prepper.api)
+1009c999
+<         spark.sparkContext.parallelize(toRDD).repartition(partitions).foreach(lambda x: mapper_f(x, credentials_bc.value, rebuild_bc.value, bands_S1_bc.value, bands_S1_bc.value, size_bc.value, overlap_bc.value))
+---
+>         spark.sparkContext.parallelize(toRDD).repartition(partitions).foreach(lambda x: mapper_f(x,api_bc.value, rebuild_bc.value, bands_S1_bc.value, bands_S1_bc.value, size_bc.value, overlap_bc.value))
